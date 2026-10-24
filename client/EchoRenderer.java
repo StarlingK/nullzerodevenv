@@ -25,8 +25,6 @@ public class EchoRenderer extends EntityRenderer<ChronosEchoEntity> {
     private final PlayerModel<AbstractClientPlayer> wide;
     private final PlayerModel<AbstractClientPlayer> slim;
 
- // this entire section was made at like 4 am off no sleep so please don't be too harsh ty
-
     public EchoRenderer(EntityRendererProvider.Context context) {
         super(context);
         this.wide = new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER), false);
@@ -57,20 +55,27 @@ public class EchoRenderer extends EntityRenderer<ChronosEchoEntity> {
         PlayerSkin skin = skinOf(entity);
         PlayerModel<AbstractClientPlayer> model = skin.model() == PlayerSkin.Model.SLIM ? slim : wide;
         boolean trail = entity.getVariant() == ChronosEchoEntity.TRAIL;
+        net.minecraft.world.phys.Vec3 cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+        double dist = cam.distanceTo(entity.position().add(0, 0.9, 0));
+        float near = (float) Math.max(0.0, Math.min(1.0, (dist - 1.2) / 2.0));
+        if (near <= 0.01f) {
+            return;
+        }
 
         int color;
         RenderType type;
         int packedLight = light;
         if (trail) {
             float life = 1f - (entity.tickCount + partialTick) / ChronosEchoEntity.TRAIL_LIFETIME;
-            int alpha = Math.max(0, Math.min(255, (int) (170 * life)));
+            int alpha = Math.max(0, Math.min(255, (int) (170 * life * near)));
             boolean cyan = (entity.getId() & 1) == 0;
             color = cyan ? FastColor.ARGB32.color(alpha, 0, 229, 255) : FastColor.ARGB32.color(alpha, 255, 43, 214);
             type = RenderType.entityTranslucentEmissive(skin.texture());
             packedLight = 15728880;
         } else {
-            color = FastColor.ARGB32.color(210, 235, 235, 255);
-            type = RenderType.entityTranslucent(skin.texture());
+            color = FastColor.ARGB32.color((int) (200 * near), 235, 235, 255);
+            type = RenderType.entityTranslucentEmissive(skin.texture());
+            packedLight = 15728880;
         }
 
         model.head.xRot = entity.getXRot() * ((float) Math.PI / 180f);
