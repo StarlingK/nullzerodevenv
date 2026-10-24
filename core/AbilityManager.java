@@ -10,7 +10,8 @@ import java.util.UUID;
 
 import dev.nullmod.NullConfig;
 import dev.nullmod.entity.ChronosEchoEntity;
-import dev.nullmod.entity.ChronosPillagerCaptain;
+import dev.nullmod.CaptainEvents;
+import net.minecraft.world.entity.monster.Pillager;
 import dev.nullmod.net.AbilityPayload;
 import dev.nullmod.net.SpeechPayload;
 import dev.nullmod.net.ZonesPayload;
@@ -643,8 +644,8 @@ public final class AbilityManager {
             long t = owner.serverLevel().getGameTime();
             int kind = kindOf(d, t);
             if (kind == K_NONE || kind == K_STOP || d.clashWith != null) continue;
-            List<ChronosPillagerCaptain> near = owner.serverLevel().getEntitiesOfClass(ChronosPillagerCaptain.class,
-                    owner.getBoundingBox().inflate(range), c -> c.isAlive() && c.distanceToSqr(owner) <= range * range);
+            List<Pillager> near = owner.serverLevel().getEntitiesOfClass(Pillager.class,
+                    owner.getBoundingBox().inflate(range), c -> c.isAlive() && CaptainEvents.isChronos(c) && c.distanceToSqr(owner) <= range * range);
             if (near.isEmpty()) continue;
             d.clashWith = near.get(0).getUUID();
             now.add(owner.getUUID());
