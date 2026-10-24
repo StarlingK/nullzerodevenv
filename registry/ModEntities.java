@@ -2,6 +2,7 @@ package dev.nullmod.registry;
 
 import dev.nullmod.NullMod;
 import dev.nullmod.entity.ChronosEchoEntity;
+import dev.nullmod.entity.ChronosPillagerCaptain;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -18,6 +19,16 @@ public final class ModEntities {
                     .clientTrackingRange(10)
                     .updateInterval(2)
                     .build("echo"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<ChronosPillagerCaptain>> CAPTAIN =
+            ENTITIES.register("chronos_pillager_captain",
+                    () -> EntityType.Builder.<ChronosPillagerCaptain>of(ChronosPillagerCaptain::new, MobCategory.MONSTER)
+                            .sized(0.6f, 1.95f)
+                            .eyeHeight(1.74f)
+                            .ridingOffset(-0.6f)
+                            .canSpawnFarFromPlayer()
+                            .clientTrackingRange(8)
+                            .build("chronos_pillager_captain"));
 
     private ModEntities() {}
 }
