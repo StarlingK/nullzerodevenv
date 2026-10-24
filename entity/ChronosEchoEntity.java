@@ -108,6 +108,11 @@ public class ChronosEchoEntity extends Entity {
     }
 
     @Override
+    public net.minecraft.world.phys.AABB getBoundingBoxForCulling() {
+        return this.getBoundingBox().inflate(2.0);
+    }
+
+    @Override
     public boolean isPickable() {
         return getVariant() == BODY && !this.isRemoved();
     }
