@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import dev.nullmod.NullConfig;
 import dev.nullmod.entity.ChronosEchoEntity;
+import dev.nullmod.entity.ChronosPillagerCaptain;
 import dev.nullmod.net.AbilityPayload;
 import dev.nullmod.net.SpeechPayload;
 import dev.nullmod.net.ZonesPayload;
@@ -57,6 +58,8 @@ public final class AbilityManager {
     private static final float SLOWMO_VOLUME = 0.2f;
 
     private static final List<ServerPlayer> ZONE_OWNERS = new ArrayList<>();
+    private record MobZone(LivingEntity source, long end) {}
+    private static final List<MobZone> MOB_ZONES = new ArrayList<>();
     private static Set<ServerLevel> sentLevels = new HashSet<>();
     private static boolean zonesDirty;
 
@@ -303,10 +306,6 @@ public final class AbilityManager {
         boolean done = d.rewindTick >= REWIND_TICKS;
         ChronosData.TrailPoint at = done ? d.trail.get(0) : sample(d, d.rewindFrom * (1.0f - eased));
         snapTo(player, at);
-        if (d.rewindTick % 2 == 0) {
-            ServerLevel level = player.serverLevel();
-            level.addFreshEntity(ChronosEchoEntity.create(level, player, ChronosEchoEntity.TRAIL));
-        }
         if (done) {
             d.trail.clear();
             d.rewinding = false;
@@ -564,7 +563,40 @@ public final class AbilityManager {
         }
     }
 
+    public static void startMobZone(LivingEntity source, int ticks) {
+        MOB_ZONES.add(new MobZone(source, source.level().getGameTime() + ticks));
+        zonesDirty = true;
+        if (source.level() instanceof ServerLevel level) {
+            slowAround(level, source, source.getX(), source.getY(), source.getZ());
+        }
+    }
+
+    private static void slowAround(ServerLevel level, LivingEntity source, double x, double y, double z) {
+        double range = NullConfig.EFFECT_RANGE.get();
+        for (ServerPlayer other : level.players()) {
+            if (other.distanceToSqr(x, y, z) > range * range) continue;
+            if (rankOfKind(kindOf(ChronosLogic.data(other), level.getGameTime())) >= 1) continue;
+            other.addEffect(new MobEffectInstance(ModEffects.TEMPORAL_DRAG, 12, 0, false, false, true));
+        }
+    }
+
+    private static void tickMobZones() {
+        if (MOB_ZONES.isEmpty()) return;
+        boolean removed = MOB_ZONES.removeIf(z -> {
+            boolean gone = z.source().isRemoved() || !z.source().isAlive()
+                    || z.source().level().getGameTime() >= z.end();
+            return gone;
+        });
+        if (removed) zonesDirty = true;
+        for (MobZone z : MOB_ZONES) {
+            if (z.source().level() instanceof ServerLevel level && level.getGameTime() % 5 == 0) {
+                slowAround(level, z.source(), z.source().getX(), z.source().getY(), z.source().getZ());
+            }
+        }
+    }
+
     public static void resolve(MinecraftServer server) {
+        tickMobZones();
         if (ZONE_OWNERS.size() >= 2 && NullConfig.AFFECT_PLAYERS.get()) {
             double range = NullConfig.EFFECT_RANGE.get();
             List<ServerPlayer> owners = new ArrayList<>(ZONE_OWNERS);
@@ -596,7 +628,34 @@ public final class AbilityManager {
                 ChronosLogic.data(a).clashWith = null;
             }
         }
+        captainClashes();
         broadcastZones(server);
+    }
+
+    private static final Set<UUID> CAPTAIN_CLASHING = new HashSet<>();
+
+    private static void captainClashes() {
+        if (ZONE_OWNERS.isEmpty() && CAPTAIN_CLASHING.isEmpty()) return;
+        double range = NullConfig.EFFECT_RANGE.get();
+        Set<UUID> now = new HashSet<>();
+        for (ServerPlayer owner : ZONE_OWNERS) {
+            ChronosData d = ChronosLogic.data(owner);
+            long t = owner.serverLevel().getGameTime();
+            int kind = kindOf(d, t);
+            if (kind == K_NONE || kind == K_STOP || d.clashWith != null) continue;
+            List<ChronosPillagerCaptain> near = owner.serverLevel().getEntitiesOfClass(ChronosPillagerCaptain.class,
+                    owner.getBoundingBox().inflate(range), c -> c.isAlive() && c.distanceToSqr(owner) <= range * range);
+            if (near.isEmpty()) continue;
+            d.clashWith = near.get(0).getUUID();
+            now.add(owner.getUUID());
+            if (!CAPTAIN_CLASHING.contains(owner.getUUID())) {
+                ChronosLogic.speak(owner, SpeechPayload.CAPTAIN, 0);
+                zonesDirty = true;
+            }
+        }
+        if (!now.equals(CAPTAIN_CLASHING)) zonesDirty = true;
+        CAPTAIN_CLASHING.clear();
+        CAPTAIN_CLASHING.addAll(now);
     }
 
     private static void suppress(ServerPlayer player, ChronosData d, long now) {
@@ -615,7 +674,7 @@ public final class AbilityManager {
     }
 
     private static void broadcastZones(MinecraftServer server) {
-        if (!zonesDirty && (ZONE_OWNERS.isEmpty() || server.getTickCount() % 5 != 0)) {
+        if (!zonesDirty && ((ZONE_OWNERS.isEmpty() && MOB_ZONES.isEmpty()) || server.getTickCount() % 5 != 0)) {
             return;
         }
         zonesDirty = false;
@@ -629,6 +688,12 @@ public final class AbilityManager {
                     owner.getId(), (float) owner.getX(), (float) owner.getY(), (float) owner.getZ(),
                     kind, d.clashWith != null));
         }
+        for (MobZone z : MOB_ZONES) {
+            if (!(z.source().level() instanceof ServerLevel level)) continue;
+            byLevel.computeIfAbsent(level, k -> new ArrayList<>()).add(new ZonesPayload.Entry(
+                    z.source().getId(), (float) z.source().getX(), (float) z.source().getY(),
+                    (float) z.source().getZ(), K_BASE, false));
+        }
         Set<ServerLevel> touched = new HashSet<>(byLevel.keySet());
         touched.addAll(sentLevels);
         float range = NullConfig.EFFECT_RANGE.get();
@@ -640,13 +705,19 @@ public final class AbilityManager {
     }
 
     public static boolean shouldSkipTick(Entity entity) {
-        if (ZONE_OWNERS.isEmpty() || entity.level().isClientSide
+        if ((ZONE_OWNERS.isEmpty() && MOB_ZONES.isEmpty()) || entity.level().isClientSide
                 || entity instanceof Player || entity instanceof ChronosEchoEntity) {
             return false;
         }
         long gameTime = entity.level().getGameTime();
         double range = NullConfig.EFFECT_RANGE.get();
         int factor = 1;
+        for (MobZone z : MOB_ZONES) {
+            if (z.source() == entity || z.source().level() != entity.level()) continue;
+            if (z.source().distanceToSqr(entity) <= range * range) {
+                factor = Math.max(factor, slowFactor(K_BASE));
+            }
+        }
         for (ServerPlayer owner : ZONE_OWNERS) {
             if (owner.level() != entity.level() || owner.distanceToSqr(entity) > range * range) continue;
             int kind = kindOf(ChronosLogic.data(owner), gameTime);
@@ -681,6 +752,7 @@ public final class AbilityManager {
 
     public static void clearAll() {
         ZONE_OWNERS.clear();
+        MOB_ZONES.clear();
         sentLevels = new HashSet<>();
     }
 
