@@ -20,6 +20,11 @@ public final class NullConfig {
             .translation("nullmod.configuration.headhunterChance")
             .defineInRange("headhunterChance", 15, 0, 100);
 
+    public static final ModConfigSpec.DoubleValue CAPTAIN_CHANCE = B
+            .comment("% chance a naturally joining pillager is replaced by a Chronos Pillager Captain.")
+            .translation("nullmod.configuration.captainChance")
+            .defineInRange("captainChance", 1.5, 0.0, 100.0);
+
     public static final ModConfigSpec.BooleanValue AFFECT_PLAYERS = B
             .comment("Slow or freeze other players inside the time bubble.")
             .translation("nullmod.configuration.affectOtherPlayers")
