@@ -121,6 +121,9 @@ public final class ThemeAudio {
                     if (z.clash()) confess = Math.max(confess, audible);
                     else zero = Math.max(zero, audible);
                 }
+                case AbilityManager.K_BASE -> {
+                    if (z.clash()) confess = Math.max(confess, audible);
+                }
                 case AbilityManager.K_HUNTER -> {
                     if (z.clash()) confess = Math.max(confess, audible);
                 }
