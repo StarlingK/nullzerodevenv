@@ -14,6 +14,7 @@ public record SpeechPayload(int kind, int arg) implements CustomPacketPayload {
 
     public static final int CLEANSE_BLOCKED = 4;
     public static final int NO_WORK = 5;
+    public static final int CAPTAIN = 6;
 
     public static final CustomPacketPayload.Type<SpeechPayload> TYPE =
             new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(NullMod.MODID, "speech"));
