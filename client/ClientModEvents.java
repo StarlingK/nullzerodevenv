@@ -28,7 +28,6 @@ public final class ClientModEvents {
     @SubscribeEvent
     public static void onRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.ECHO.get(), EchoRenderer::new);
-        event.registerEntityRenderer(ModEntities.CAPTAIN.get(), net.minecraft.client.renderer.entity.PillagerRenderer::new);
     }
 
     @SubscribeEvent
@@ -45,6 +44,8 @@ public final class ClientModEvents {
 
     @SubscribeEvent
     public static void onItemColors(RegisterColorHandlersEvent.Item event) {
+        event.register((stack, tint) -> 0xFF000000 | (tint == 0 ? 0x4A5459 : 0x00E5FF),
+                dev.nullmod.registry.ModItems.CAPTAIN_EGG.get());
         event.register((stack, tint) -> {
             if (tint > 0) return -1;
             String path = ModPotions.ourPotionPath(stack);
