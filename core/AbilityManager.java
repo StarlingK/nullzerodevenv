@@ -82,7 +82,7 @@ public final class AbilityManager {
     public static boolean zoneSkips(int kind, long gameTime) {
         if (kind == K_STOP) return true;
         int factor = slowFactor(kind);
-        return factor > 1 && (gameTime + entity.getId()) % factor != 0;
+        return factor > 1 && gameTime % factor != 0;
     }
 
     public static int kindOf(ChronosData d, long now) {
