@@ -1,0 +1,16 @@
+package dev.nullmod.registry;
+
+import dev.nullmod.NullMod;
+import dev.nullmod.item.RecipePaperItem;
+import net.minecraft.world.item.Item;
+import net.neoforged.neoforge.registries.DeferredItem;
+import net.neoforged.neoforge.registries.DeferredRegister;
+
+public final class ModItems {
+    public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(NullMod.MODID);
+
+    public static final DeferredItem<RecipePaperItem> RECIPE_PAPER =
+            ITEMS.registerItem("recipe_paper", RecipePaperItem::new, new Item.Properties().stacksTo(1));
+
+    private ModItems() {}
+}
