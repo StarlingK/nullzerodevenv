@@ -26,7 +26,7 @@ public final class SpeechOverlay {
         }
         Font font = mc.font;
         int kind = ClientState.speechKind;
-        boolean neon = kind == SpeechPayload.HIGH_1 || kind == SpeechPayload.NO_WORK;
+        boolean neon = kind == SpeechPayload.HIGH_1 || kind == SpeechPayload.NO_WORK || kind == SpeechPayload.CAPTAIN;
         boolean red = kind == SpeechPayload.HIGH_2;
 
         int left = ClientState.SPEECH_LIFE - ClientState.speechAge;
