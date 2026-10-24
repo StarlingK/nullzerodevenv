@@ -108,6 +108,7 @@ public final class ClientState {
             case SpeechPayload.HIGH_2 -> Component.translatable("speech.nullmod.high2");
             case SpeechPayload.CLEANSE_BLOCKED -> Component.translatable("speech.nullmod.cleanse_blocked", speechArg);
             case SpeechPayload.NO_WORK -> Component.translatable("speech.nullmod.no_work");
+            case SpeechPayload.CAPTAIN -> Component.translatable("speech.nullmod.captain");
             default -> Component.empty();
         };
     }
