@@ -28,6 +28,7 @@ public final class ClientModEvents {
     @SubscribeEvent
     public static void onRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.ECHO.get(), EchoRenderer::new);
+        event.registerEntityRenderer(ModEntities.CAPTAIN.get(), net.minecraft.client.renderer.entity.PillagerRenderer::new);
     }
 
     @SubscribeEvent
