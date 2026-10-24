@@ -33,6 +33,7 @@ public final class ModTabs {
                         output.accept(potion(ModPotions.CLEANSING_BASE));
                         output.accept(potion(ModPotions.CLEANSING));
                         output.accept(ModItems.RECIPE_PAPER.get());
+                        output.accept(ModItems.CAPTAIN_EGG.get());
                     })
                     .build());
 
