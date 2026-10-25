@@ -17,7 +17,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
-
+// rename package root to 'k' to fit new environemnt, moved from dev
 @Mod(NullMod.MODID)
 public class NullMod {
     public static final String MODID = "nullmod";
