@@ -9,7 +9,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import org.joml.Matrix4f;
-
+// this way of doing it sucks, remove?
 public final class VoidFace {
     private VoidFace() {}
 
