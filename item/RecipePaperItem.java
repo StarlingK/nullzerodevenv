@@ -1,8 +1,8 @@
-package dev.nullmod.item;
+package nullmod.item;
 
 import java.util.List;
 
-import dev.nullmod.client.ClientHooks;
+import nullmod.client.ClientHooks;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;

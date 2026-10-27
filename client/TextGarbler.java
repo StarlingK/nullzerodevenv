@@ -1,4 +1,4 @@
-package dev.nullmod.client;
+package nullmod.client;
 
 import java.util.concurrent.ThreadLocalRandom;
 

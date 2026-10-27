@@ -1,4 +1,4 @@
-package dev.nullmod.client;
+package nullmod.client;
 
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;

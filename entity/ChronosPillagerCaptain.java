@@ -1,6 +1,6 @@
-package dev.nullmod.entity;
+package nullmod.entity;
 
-import dev.nullmod.core.AbilityManager;
+import nullmod.core.AbilityManager;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;

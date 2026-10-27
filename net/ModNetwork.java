@@ -1,7 +1,7 @@
-package dev.nullmod.net;
+package nullmod.net;
 
-import dev.nullmod.client.ClientHooks;
-import dev.nullmod.core.AbilityManager;
+import nullmod.client.ClientHooks;
+import nullmod.core.AbilityManager;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;

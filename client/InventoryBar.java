@@ -1,8 +1,8 @@
-package dev.nullmod.client;
+package nullmod.client;
 
 import java.util.List;
 
-import dev.nullmod.NullMod;
+import nullmod.NullMod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -36,9 +36,9 @@ public final class InventoryBar {
         Font font = Minecraft.getInstance().font;
         int w = screen.getXSize();
         int x = screen.getGuiLeft();
-        int y = screen.getGuiTop() + screen.getYSize() + 2;
-
-        int h = 46;
+        int h = 58;
+        int y = Math.min(screen.getGuiTop() + screen.getYSize() + 2,
+                Minecraft.getInstance().getWindow().getGuiScaledHeight() - h - 2);
 
         panel(gfx, x, y, w, h);
 
@@ -79,13 +79,13 @@ public final class InventoryBar {
         Component affinity = ClientState.affinity < 0
                 ? Component.translatable("gui.nullmod.affinity.unknown")
                 : Component.translatable("gui.nullmod.affinity", ClientState.affinity);
-        gfx.drawString(font, affinity, x + 8, y + 35, 0x404040, false);
+        gfx.drawString(font, affinity, x + 8, y + 39, 0x404040, false);
 
         if (ClientState.tier != 0) {
             Component type = ClientState.tierEnum().typeLabel();
             int color = ClientState.tierEnum().color;
             int typeX = x + 8 + font.width(affinity) + 8;
-            gfx.drawString(font, type, typeX, y + 35, 0xFF000000 | color, color != 0x000000);
+            gfx.drawString(font, type, typeX, y + 39, 0xFF000000 | color, color != 0x000000);
         }
 
         if (ClientState.showInfo) {

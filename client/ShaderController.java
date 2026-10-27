@@ -1,7 +1,8 @@
-package dev.nullmod.client;
+package nullmod.client;
 
-import dev.nullmod.NullMod;
-import dev.nullmod.net.SyncPayload;
+import nullmod.NullMod;
+import nullmod.core.AbilityManager;
+import nullmod.net.SyncPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.PostChain;
 import net.minecraft.resources.ResourceLocation;
@@ -38,9 +39,19 @@ public final class ShaderController {
             unload(mc);
             return;
         }
-        float tBullet = ClientState.has(SyncPayload.FLAG_BULLET) ? 1f : 0f;
-        float tGhost = ClientState.has(SyncPayload.FLAG_GHOST) || ClientState.has(SyncPayload.FLAG_REWIND) ? 1f : 0f;
-        float tStop = ClientState.has(SyncPayload.FLAG_STOP) ? 1f : 0f;
+        float zBullet = 0f, zGhost = 0f, zStop = 0f;
+        double r2 = (double) ZoneState.range() * ZoneState.range();
+        for (ZoneState.Zone z : ZoneState.zones()) {
+            if (z.owner() == mc.player.getId() || mc.player.distanceToSqr(z.x(), z.y(), z.z()) > r2) continue;
+            switch (z.kind()) {
+                case AbilityManager.K_STOP -> zStop = 1f;
+                case AbilityManager.K_GHOST -> zGhost = 1f;
+                default -> zBullet = 1f;
+            }
+        }
+        float tBullet = ClientState.has(SyncPayload.FLAG_BULLET) ? 1f : zBullet;
+        float tGhost = ClientState.has(SyncPayload.FLAG_GHOST) || ClientState.has(SyncPayload.FLAG_REWIND) ? 1f : zGhost;
+        float tStop = ClientState.has(SyncPayload.FLAG_STOP) ? 1f : zStop;
         float tWd = switch (ClientState.stage) { case 1 -> 0.15f; case 2 -> 0.4f; case 3 -> 0.7f; case 4 -> 1f; default -> 0f; };
         float tGlitch = ClientState.glitching() ? 1f : (ClientState.clashGlitch() ? 0.6f : 0f);
         float tPsy = ClientState.stage >= 4 && ClientState.glitching() ? 1f : 0f;

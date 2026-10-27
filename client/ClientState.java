@@ -1,9 +1,9 @@
-package dev.nullmod.client;
+package nullmod.client;
 
-import dev.nullmod.core.ChronosLogic;
-import dev.nullmod.core.ChronosTier;
-import dev.nullmod.net.SpeechPayload;
-import dev.nullmod.net.SyncPayload;
+import nullmod.core.ChronosLogic;
+import nullmod.core.ChronosTier;
+import nullmod.net.SpeechPayload;
+import nullmod.net.SyncPayload;
 import net.minecraft.network.chat.Component;
 
 public final class ClientState {

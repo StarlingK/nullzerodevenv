@@ -1,4 +1,4 @@
-package dev.nullmod.core;
+package nullmod.core;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -8,15 +8,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import dev.nullmod.NullConfig;
-import dev.nullmod.entity.ChronosEchoEntity;
-import dev.nullmod.CaptainEvents;
+import nullmod.NullConfig;
+import nullmod.entity.ChronosEchoEntity;
+import nullmod.CaptainEvents;
 import net.minecraft.world.entity.monster.Pillager;
-import dev.nullmod.net.AbilityPayload;
-import dev.nullmod.net.SpeechPayload;
-import dev.nullmod.net.ZonesPayload;
-import dev.nullmod.registry.ModEffects;
-import dev.nullmod.registry.ModSounds;
+import nullmod.net.AbilityPayload;
+import nullmod.net.SpeechPayload;
+import nullmod.net.ZonesPayload;
+import nullmod.registry.ModEffects;
+import nullmod.registry.ModSounds;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
@@ -182,7 +182,7 @@ public final class AbilityManager {
 
     private static void hunterToggle(ServerPlayer player, ChronosData d, long now) {
         if (d.hunterOn) {
-            endHunter(player, d, now, false);
+            endHunter(player, d, now);
             ChronosLogic.syncNow(player);
             return;
         }
@@ -192,19 +192,17 @@ public final class AbilityManager {
         }
         d.hunterOn = true;
         d.bulletStart = now;
-        resetTrail(player, d);
         player.addEffect(new MobEffectInstance(ModEffects.BULLET_TIME, 60, 0, false, false, true));
         playCue(player, ModSounds.SLOWMO_1.get());
         ChronosLogic.charge(player, d, ChronosLogic.COST_HUNTER_START);
         ChronosLogic.syncNow(player);
     }
 
-    private static void endHunter(ServerPlayer player, ChronosData d, long now, boolean rewind) {
+    private static void endHunter(ServerPlayer player, ChronosData d, long now) {
         d.hunterOn = false;
         d.bulletCdUntil = now + ChronosLogic.cooldown(player.serverLevel(), NullConfig.HUNTER_COOLDOWN.get());
         player.removeEffect(ModEffects.BULLET_TIME);
-        if (rewind) startRewind(player, d);
-        else d.trail.clear();
+        d.trail.clear();
     }
 
     private static void ghostStart(ServerPlayer player, ChronosData d, long now) {
@@ -323,7 +321,7 @@ public final class AbilityManager {
         if (d.ghostActive()) {
             endGhost(player, d, End.REWIND);
         } else if (d.hunterOn) {
-            endHunter(player, d, now, true);
+            return;
         } else if (d.bulletActive(now)) {
             d.bulletEnd = 0;
             player.removeEffect(ModEffects.BULLET_TIME);
@@ -336,6 +334,8 @@ public final class AbilityManager {
         ServerLevel level = player.serverLevel();
         long now = level.getGameTime();
         if (d.rewinding) return;
+
+        if (d.hunterOn && !d.ghostActive()) return;
 
         UUID partnerId = d.clashWith;
         boolean ghost = d.ghostActive();
@@ -418,7 +418,6 @@ public final class AbilityManager {
         double t = Mth.clamp(p.subtract(a).dot(ab) / lengthSq, 0.0, 1.0);
         return p.distanceTo(a.add(ab.scale(t)));
     }
-
 
     private static void dragonFire(ServerPlayer player, ChronosData d, long now, float requested) {
         if (!d.timeStopActive(now)) {
@@ -526,7 +525,7 @@ public final class AbilityManager {
         }
         if (d.rewinding) {
             tickRewind(player, d);
-        } else if (d.ghostActive() || d.hunterOn || (d.tier == ChronosTier.ZERO.id && d.bulletActive(now))) {
+        } else if (d.ghostActive() || (d.tier == ChronosTier.ZERO.id && d.bulletActive(now))) {
             record(player, d);
         }
 
@@ -565,11 +564,43 @@ public final class AbilityManager {
     }
 
     public static void startMobZone(LivingEntity source, int ticks) {
-        MOB_ZONES.add(new MobZone(source, source.level().getGameTime() + ticks));
+        long end = source.level().getGameTime() + ticks;
+        MobZone existing = null;
+        for (MobZone z : MOB_ZONES) {
+            if (z.source() == source) {
+                existing = z;
+                break;
+            }
+        }
+        if (existing != null) {
+            if (existing.end() >= end) return;
+            MOB_ZONES.remove(existing);
+            MOB_ZONES.add(new MobZone(source, end));
+            return;
+        }
+        MOB_ZONES.add(new MobZone(source, end));
         zonesDirty = true;
         if (source.level() instanceof ServerLevel level) {
             slowAround(level, source, source.getX(), source.getY(), source.getZ());
         }
+    }
+
+    private static boolean shieldedByCaptain(Entity entity, double range) {
+        if (!(entity instanceof Pillager)) return false;
+        for (MobZone z : MOB_ZONES) {
+            if (z.source() != entity && z.source() instanceof Pillager captain && CaptainEvents.isChronos(captain)
+                    && z.source().level() == entity.level() && z.source().distanceToSqr(entity) <= range * range) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean hasMobZone(Entity source) {
+        for (MobZone z : MOB_ZONES) {
+            if (z.source() == source) return true;
+        }
+        return false;
     }
 
     private static void slowAround(ServerLevel level, LivingEntity source, double x, double y, double z) {
@@ -639,31 +670,79 @@ public final class AbilityManager {
         if (ZONE_OWNERS.isEmpty() && CAPTAIN_CLASHING.isEmpty()) return;
         double range = NullConfig.EFFECT_RANGE.get();
         Set<UUID> now = new HashSet<>();
+        Set<UUID> waiting = new HashSet<>();
         for (ServerPlayer owner : ZONE_OWNERS) {
             ChronosData d = ChronosLogic.data(owner);
             long t = owner.serverLevel().getGameTime();
             int kind = kindOf(d, t);
-            if (kind == K_NONE || kind == K_STOP || d.clashWith != null) continue;
+            if (kind == K_NONE || d.clashWith != null) continue;
             List<Pillager> near = owner.serverLevel().getEntitiesOfClass(Pillager.class,
                     owner.getBoundingBox().inflate(range), c -> c.isAlive() && CaptainEvents.isChronos(c) && c.distanceToSqr(owner) <= range * range);
             if (near.isEmpty()) continue;
-            d.clashWith = near.get(0).getUUID();
+            Pillager captain = near.get(0);
+            for (Pillager c : near) {
+                if (c.distanceToSqr(owner) < captain.distanceToSqr(owner)) captain = c;
+            }
+            if (!revealed(captain)) {
+                long since = REVEAL_PENDING.computeIfAbsent(captain.getUUID(), k -> t);
+                waiting.add(captain.getUUID());
+                if (t - since < REVEAL_DELAY_TICKS && !hasMobZone(captain)) {
+                    continue;
+                }
+                reveal(captain, owner);
+            }
+            d.clashWith = captain.getUUID();
             now.add(owner.getUUID());
+            engageCaptain(captain);
             if (!CAPTAIN_CLASHING.contains(owner.getUUID())) {
-                ChronosLogic.speak(owner, SpeechPayload.CAPTAIN, 0);
                 zonesDirty = true;
             }
         }
+        REVEAL_PENDING.keySet().retainAll(waiting);
         if (!now.equals(CAPTAIN_CLASHING)) zonesDirty = true;
         CAPTAIN_CLASHING.clear();
         CAPTAIN_CLASHING.addAll(now);
+    }
+
+    private static final int CAPTAIN_LINGER_TICKS = 10;
+    private static final int REVEAL_DELAY_TICKS = 20;
+    private static final String REVEALED = "nullmod_chronos_revealed";
+    private static final Map<UUID, Long> REVEAL_PENDING = new HashMap<>();
+
+    private static boolean revealed(Pillager captain) {
+        return captain.getPersistentData().getBoolean(REVEALED);
+    }
+
+    private static void reveal(Pillager captain, ServerPlayer trigger) {
+        captain.getPersistentData().putBoolean(REVEALED, true);
+        REVEAL_PENDING.remove(captain.getUUID());
+        if (!(captain.level() instanceof ServerLevel level)) return;
+        level.playSound(null, captain.getX(), captain.getY(), captain.getZ(),
+                SoundEvents.GLASS_BREAK, SoundSource.HOSTILE, 1.6f, 0.8f);
+        level.playSound(null, captain.getX(), captain.getY(), captain.getZ(),
+                SoundEvents.AMETHYST_BLOCK_BREAK, SoundSource.HOSTILE, 1.6f, 0.6f);
+        double range = NullConfig.EFFECT_RANGE.get();
+        for (ServerPlayer p : level.players()) {
+            if (p == trigger || p.distanceToSqr(captain) <= range * range) {
+                ChronosLogic.speak(p, SpeechPayload.CAPTAIN, captain.getId());
+            }
+        }
+    }
+
+    private static void engageCaptain(Pillager captain) {
+        boolean fresh = !hasMobZone(captain);
+        startMobZone(captain, CAPTAIN_LINGER_TICKS);
+        if (fresh && captain.level() instanceof ServerLevel level) {
+            level.playSound(null, captain.getX(), captain.getY(), captain.getZ(),
+                    ModSounds.SLOWMO_1.get(), SoundSource.HOSTILE, 0.6f, 0.8f);
+        }
     }
 
     private static void suppress(ServerPlayer player, ChronosData d, long now) {
         if (d.ghostActive()) {
             endGhost(player, d, End.REWIND);
         } else if (d.hunterOn) {
-            endHunter(player, d, now, false);
+            endHunter(player, d, now);
         } else if (d.timeStopActive(now)) {
             endTimeStop(player, d, now, true);
         } else if (d.bulletActive(now)) {
@@ -691,9 +770,16 @@ public final class AbilityManager {
         }
         for (MobZone z : MOB_ZONES) {
             if (!(z.source().level() instanceof ServerLevel level)) continue;
+            boolean clashing = false;
+            for (ServerPlayer owner : ZONE_OWNERS) {
+                if (z.source().getUUID().equals(ChronosLogic.data(owner).clashWith)) {
+                    clashing = true;
+                    break;
+                }
+            }
             byLevel.computeIfAbsent(level, k -> new ArrayList<>()).add(new ZonesPayload.Entry(
                     z.source().getId(), (float) z.source().getX(), (float) z.source().getY(),
-                    (float) z.source().getZ(), K_BASE, false));
+                    (float) z.source().getZ(), K_BASE, clashing));
         }
         Set<ServerLevel> touched = new HashSet<>(byLevel.keySet());
         touched.addAll(sentLevels);
@@ -705,13 +791,14 @@ public final class AbilityManager {
         sentLevels = new HashSet<>(byLevel.keySet());
     }
 
-    public static boolean shouldSkipTick(Entity entity) {
+    public static int factorFor(Entity entity) {
         if ((ZONE_OWNERS.isEmpty() && MOB_ZONES.isEmpty()) || entity.level().isClientSide
                 || entity instanceof Player || entity instanceof ChronosEchoEntity) {
-            return false;
+            return 1;
         }
         long gameTime = entity.level().getGameTime();
         double range = NullConfig.EFFECT_RANGE.get();
+        boolean zoneSource = hasMobZone(entity) || shieldedByCaptain(entity, range);
         int factor = 1;
         for (MobZone z : MOB_ZONES) {
             if (z.source() == entity || z.source().level() != entity.level()) continue;
@@ -722,18 +809,26 @@ public final class AbilityManager {
         for (ServerPlayer owner : ZONE_OWNERS) {
             if (owner.level() != entity.level() || owner.distanceToSqr(entity) > range * range) continue;
             int kind = kindOf(ChronosLogic.data(owner), gameTime);
+            if (zoneSource) continue;
             if (kind == K_STOP) {
-                return true;
+                return 0;
             }
             factor = Math.max(factor, slowFactor(kind));
         }
-        return factor > 1 && (gameTime + entity.getId()) % factor != 0;
+        return zoneSource ? 1 : factor;
+    }
+
+    public static boolean shouldSkipTick(Entity entity) {
+        int factor = factorFor(entity);
+        if (factor == 0) return true;
+        if (factor == 1 || entity instanceof LivingEntity) return false;
+        return (entity.level().getGameTime() + entity.getId()) % factor != 0;
     }
 
     public static void endAll(ServerPlayer player, ChronosData d, boolean rewindGhost) {
         long now = player.serverLevel().getGameTime();
         if (d.ghostActive()) endGhost(player, d, rewindGhost ? End.REWIND : End.QUIET);
-        if (d.hunterOn) endHunter(player, d, now, false);
+        if (d.hunterOn) endHunter(player, d, now);
         if (d.bulletEnd != 0) endBullet(player, d);
         if (d.timeStopEnd != 0) endTimeStop(player, d, now, true);
         if (!rewindGhost || !d.rewinding) {

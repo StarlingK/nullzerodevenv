@@ -1,4 +1,4 @@
-package dev.nullmod;
+package nullmod;
 
 import net.neoforged.neoforge.common.ModConfigSpec;
 
@@ -25,6 +25,11 @@ public final class NullConfig {
             .translation("nullmod.configuration.captainChance")
             .defineInRange("captainChance", 1.5, 0.0, 100.0);
 
+    public static final ModConfigSpec.DoubleValue CAPTAIN_ABILITY_CHANCE = B
+            .comment("% chance per second that a Chronos Captain with a nearby player activates its own ability.")
+            .translation("nullmod.configuration.captainAbilityChance")
+            .defineInRange("captainAbilityChance", 8.0, 0.0, 100.0);
+
     public static final ModConfigSpec.BooleanValue AFFECT_PLAYERS = B
             .comment("Slow or freeze other players inside the time bubble.")
             .translation("nullmod.configuration.affectOtherPlayers")
@@ -39,6 +44,21 @@ public final class NullConfig {
             .comment("Master switch for withdrawal. The nullWithdrawal gamerule must also be true.")
             .translation("nullmod.configuration.withdrawal")
             .define("withdrawal", true);
+
+    public static final ModConfigSpec.BooleanValue WITHDRAWAL_OVERLOAD = B
+            .comment("Deep withdrawal overloads the body: periodic nausea and blindness, then bleeding that never kills.")
+            .translation("nullmod.configuration.withdrawalOverload")
+            .define("withdrawalOverload", true);
+
+    public static final ModConfigSpec.BooleanValue WITHDRAWAL_BLEED = B
+            .comment("Whether withdrawal overload deals bleed damage (it stops at half a heart).")
+            .translation("nullmod.configuration.withdrawalBleed")
+            .define("withdrawalBleed", true);
+
+    public static final ModConfigSpec.BooleanValue WITHDRAWAL_HALLUCINATIONS = B
+            .comment("Client side: at withdrawal stage 3+ other creatures are drawn as hostile mobs. Hitting one breaks the illusion.")
+            .translation("nullmod.configuration.withdrawalHallucinations")
+            .define("withdrawalHallucinations", true);
 
     public static final ModConfigSpec.BooleanValue DRAGON_PVP = B
             .comment("Dragon blinks can hurt other players.")

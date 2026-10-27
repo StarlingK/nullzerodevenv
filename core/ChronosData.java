@@ -1,4 +1,4 @@
-package dev.nullmod.core;
+package nullmod.core;
 
 import java.util.ArrayList;
 import java.util.List;

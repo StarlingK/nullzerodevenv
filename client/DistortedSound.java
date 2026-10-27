@@ -1,4 +1,4 @@
-package dev.nullmod.client;
+package nullmod.client;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.AbstractSoundInstance;

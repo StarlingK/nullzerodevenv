@@ -1,8 +1,8 @@
-package dev.nullmod.client;
+package nullmod.client;
 
 import com.mojang.math.Axis;
 
-import dev.nullmod.NullMod;
+import nullmod.NullMod;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;

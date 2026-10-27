@@ -1,6 +1,6 @@
-package dev.nullmod.registry;
+package nullmod.registry;
 
-import dev.nullmod.NullMod;
+import nullmod.NullMod;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;

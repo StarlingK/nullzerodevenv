@@ -1,9 +1,9 @@
-package dev.nullmod;
+package nullmod;
 
-import dev.nullmod.core.AbilityManager;
-import dev.nullmod.core.ChronosData;
-import dev.nullmod.core.ChronosLogic;
-import dev.nullmod.registry.ModPotions;
+import nullmod.core.AbilityManager;
+import nullmod.core.ChronosData;
+import nullmod.core.ChronosLogic;
+import nullmod.registry.ModPotions;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerPlayer;
@@ -86,10 +86,6 @@ public final class ChronosEvents {
                 event.setCanceled(true);
                 return;
             }
-        }
-        if (event.getSource().getEntity() instanceof ServerPlayer attacker
-                && ChronosLogic.data(attacker).ghostActive()) {
-            event.setCanceled(true);
         }
     }
 

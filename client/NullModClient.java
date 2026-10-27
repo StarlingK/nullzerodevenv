@@ -1,6 +1,6 @@
-package dev.nullmod.client;
+package nullmod.client;
 
-import dev.nullmod.NullMod;
+import nullmod.NullMod;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;

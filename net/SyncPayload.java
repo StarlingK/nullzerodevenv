@@ -1,6 +1,6 @@
-package dev.nullmod.net;
+package nullmod.net;
 
-import dev.nullmod.NullMod;
+import nullmod.NullMod;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;

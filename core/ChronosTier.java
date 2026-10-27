@@ -1,4 +1,4 @@
-package dev.nullmod.core;
+package nullmod.core;
 
 import net.minecraft.network.chat.Component;
 

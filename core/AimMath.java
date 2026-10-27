@@ -1,4 +1,4 @@
-package dev.nullmod.core;
+package nullmod.core;
 
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.player.Player;

@@ -1,33 +1,82 @@
-package dev.nullmod.client;
+package nullmod.client;
+
+import java.util.List;
 
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
-import com.mojang.math.Axis;
 
-public final class SlashOverlay {
-    private static final int LIFE = 7;
+public final class SpeechOverlay {
+    public static final ResourceLocation FONT = ResourceLocation.fromNamespaceAndPath("nullmod", "visitor");
+    private static final float SCALE = 0.8f;
 
-    private SlashOverlay() {}
+    private SpeechOverlay() {}
 
     public static void render(GuiGraphics gfx, DeltaTracker delta) {
-        if (ClientState.slashAge >= LIFE || Minecraft.getInstance().options.hideGui) {
+        Minecraft mc = Minecraft.getInstance();
+        if (ClientState.speechKind < 0 || mc.options.hideGui) {
             return;
         }
-        float t = (ClientState.slashAge + delta.getGameTimeDeltaPartialTick(false)) / LIFE;
-        float reveal = Mth.clamp(t * 3.0f, 0f, 1f);
-        int alpha = Mth.clamp((int) (255f * (1f - t)), 0, 255);
-        int w = gfx.guiWidth();
-        int h = gfx.guiHeight();
-        float length = (float) Math.hypot(w, h) * 1.2f * reveal;
+        Font font = mc.font;
+        int kind = ClientState.speechKind;
+        boolean neon = kind == 2 || kind == 5 || kind == 6;
+        boolean red = kind == 3;
+        int left = 90 - ClientState.speechAge;
+        int alpha = Mth.clamp((int) (255.0f * left / 15.0f), 0, 255);
+        if (alpha < 6) {
+            return;
+        }
+        int main = neon ? 0xFF2BD6 : (red ? 0xFF2222 : 0xFFFFFF);
+        int shadow = neon ? 0x00E5FF : 0;
+        Component base = ClientState.speechText();
+        Component mainText = base.copy().withStyle(s -> s.withFont(FONT).withColor(main));
+        Component shadowText = base.copy().withStyle(s -> s.withFont(FONT).withColor(shadow));
+        int right = gfx.guiWidth() / 2 + 91;
+        int wrap = Math.max(60, (int) (Math.min(220, right - 8) / SCALE));
+        List<FormattedCharSequence> mainLines = font.split(mainText, wrap);
+        List<FormattedCharSequence> shadowLines = font.split(shadowText, wrap);
+        int lineH = 9;
+        float bottom = gfx.guiHeight() - 59;
+        float top = bottom - mainLines.size() * lineH * SCALE;
+        float shakeX = 0f;
+        float shakeY = 0f;
+        if ((neon || red) && mc.level != null) {
+            shakeX = (mc.level.random.nextFloat() - 0.5f) * 2.0f;
+            shakeY = (mc.level.random.nextFloat() - 0.5f) * 2.0f;
+        }
+        int argb = alpha << 24;
+        for (int i = 0; i < mainLines.size(); i++) {
+            FormattedCharSequence line = mainLines.get(i);
+            float w = font.width(line) * SCALE;
+            float x = right - w;
+            float y = top + i * lineH * SCALE;
+            gfx.pose().pushPose();
+            gfx.pose().translate(x + shakeX, y + shakeY, 0f);
+            gfx.pose().scale(SCALE, SCALE, 1.0f);
+            if (neon) {
+                gfx.drawString(font, shadowLines.get(i), 2, 1, argb | shadow, false);
+                gfx.drawString(font, shadowLines.get(i), -1, 0, (alpha / 2 << 24) | shadow, false);
+            } else {
+                gfx.drawString(font, shadowLines.get(i), 1, 1, argb | shadow, false);
+            }
+            gfx.drawString(font, line, 0, 0, argb | main, false);
+            gfx.pose().popPose();
+        }
+    }
 
-        gfx.pose().pushPose();
-        gfx.pose().translate(w / 2f, h / 2f, 0);
-        gfx.pose().mulPose(Axis.ZP.rotationDegrees(-28f));
-        gfx.fill((int) (-length / 2), -6, (int) (length / 2), 6, (alpha / 3 << 24) | 0x00E5FF);
-        gfx.fill((int) (-length / 2), -3, (int) (length / 2), 3, (alpha / 2 << 24) | 0xFF2BD6);
-        gfx.fill((int) (-length / 2), -1, (int) (length / 2), 1, (alpha << 24) | 0xFFFFFF);
-        gfx.pose().popPose();
+    public static void renderAim(GuiGraphics gfx, DeltaTracker delta) {
+        if (!ClientState.aiming) {
+            return;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        Component text = Component.translatable("gui.nullmod.range", String.format("%.0f", ClientState.aimRange))
+                .withStyle(s -> s.withFont(FONT));
+        int w = mc.font.width(text);
+        gfx.drawString(mc.font, text, gfx.guiWidth() / 2 - w / 2, gfx.guiHeight() / 2 + 14, 0xFF00E5FF, true);
     }
 }

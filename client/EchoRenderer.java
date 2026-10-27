@@ -1,11 +1,11 @@
-package dev.nullmod.client;
+package nullmod.client;
 
 import java.util.UUID;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
-import dev.nullmod.entity.ChronosEchoEntity;
+import nullmod.entity.ChronosEchoEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelLayers;
@@ -38,7 +38,7 @@ public class EchoRenderer extends EntityRenderer<ChronosEchoEntity> {
         if (id == null) {
             return DefaultPlayerSkin.get(UUID.randomUUID());
         }
-        
+
         PlayerInfo info = Minecraft.getInstance().getConnection() != null
                 ? Minecraft.getInstance().getConnection().getPlayerInfo(id) : null;
         return info != null ? info.getSkin() : DefaultPlayerSkin.get(id);

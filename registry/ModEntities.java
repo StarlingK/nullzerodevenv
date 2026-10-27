@@ -1,7 +1,7 @@
-package dev.nullmod.registry;
+package nullmod.registry;
 
-import dev.nullmod.NullMod;
-import dev.nullmod.entity.ChronosEchoEntity;
+import nullmod.NullMod;
+import nullmod.entity.ChronosEchoEntity;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;

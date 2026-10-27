@@ -1,4 +1,4 @@
-package dev.nullmod.client;
+package nullmod.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 

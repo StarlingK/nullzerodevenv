@@ -1,12 +1,12 @@
-package dev.nullmod.core;
+package nullmod.core;
 
-import dev.nullmod.NullConfig;
-import dev.nullmod.net.SpeechPayload;
-import dev.nullmod.net.SyncPayload;
-import dev.nullmod.registry.ModAttachments;
-import dev.nullmod.registry.ModEffects;
-import dev.nullmod.registry.ModGameRules;
-import dev.nullmod.registry.ModSounds;
+import nullmod.NullConfig;
+import nullmod.net.SpeechPayload;
+import nullmod.net.SyncPayload;
+import nullmod.registry.ModAttachments;
+import nullmod.registry.ModEffects;
+import nullmod.registry.ModGameRules;
+import nullmod.registry.ModSounds;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
@@ -192,7 +192,6 @@ public final class ChronosLogic {
         if (fromAbility && tier == ChronosTier.DRAGON && withdrawalOn(player.serverLevel())) {
             d.withdrawalTicks = EMPTY_TO_STAGE_4;
             player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 200, 0));
-            player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 300, 0));
             speak(player, SpeechPayload.HIGH_2, 0);
         }
     }
@@ -220,6 +219,7 @@ public final class ChronosLogic {
         if (stage > 0) {
             if (now % 20 == 0) applyWithdrawalEffects(player, stage);
             tickGlitchAndSpeech(player, d, now, stage);
+            if (NullConfig.WITHDRAWAL_OVERLOAD.get()) tickOverload(player, d, now, stage);
         }
         tickCutscene(player, d, now, stage);
         syncIfChanged(player, d, now, stage);
@@ -296,9 +296,6 @@ public final class ChronosLogic {
         if (stage >= 2) {
             player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 100, stage >= 4 ? 1 : 0, false, false, true));
         }
-        if (stage >= 3) {
-            player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 260, 0, false, false, true));
-        }
     }
 
     private static void clearWithdrawalEffects(ServerPlayer player) {
@@ -330,6 +327,35 @@ public final class ChronosLogic {
                 speak(player, random.nextBoolean() ? SpeechPayload.LOW_1 : SpeechPayload.LOW_2, 0);
                 d.nextSpeech = now + 800 + random.nextInt(1200);
             }
+        }
+    }
+
+    private static final int DEEP_EMPTY_TICKS = EMPTY_TO_STAGE_4 + 1200;
+
+    private static void tickOverload(ServerPlayer player, ChronosData d, long now, int stage) {
+        ServerLevel level = player.serverLevel();
+        if (stage >= 3 && now % 90 == 0) {
+            player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 20, 0, false, false, false));
+        }
+        if (stage < 3 || !NullConfig.WITHDRAWAL_BLEED.get()) return;
+
+        boolean deep = stage >= 4 && d.withdrawalTicks >= DEEP_EMPTY_TICKS;
+        int interval = deep ? 16 : (stage >= 4 ? 24 : 35);
+        if (now % interval != 0) return;
+        float amount = deep ? 2.0f : (stage >= 4 ? 1.5f : 1.0f);
+        float floor = stage >= 4 ? 1.0f : 2.0f;
+        net.minecraft.world.phys.Vec3 eye = player.getEyePosition();
+        if (player.getHealth() > floor) {
+            player.hurt(player.damageSources().generic(), amount);
+        }
+        level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(
+                new org.joml.Vector3f(0.9f, 0.04f, 0.04f), stage >= 4 ? 1.3f : 1.0f),
+                eye.x, eye.y - 0.1, eye.z, stage >= 4 ? 8 : 4, 0.15, 0.15, 0.15, 0.04);
+        if (stage >= 4) {
+            level.sendParticles(net.minecraft.core.particles.ParticleTypes.DAMAGE_INDICATOR,
+                    eye.x, eye.y, eye.z, 4, 0.2, 0.2, 0.2, 0.1);
+            level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                    net.minecraft.sounds.SoundEvents.WARDEN_HEARTBEAT, SoundSource.PLAYERS, 1.1f, 1.2f);
         }
     }
 

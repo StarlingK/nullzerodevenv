@@ -1,9 +1,9 @@
-package dev.nullmod.registry;
+package nullmod.registry;
 
 import java.util.function.Supplier;
 
-import dev.nullmod.NullMod;
-import dev.nullmod.core.ChronosData;
+import nullmod.NullMod;
+import nullmod.core.ChronosData;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;

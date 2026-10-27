@@ -1,6 +1,6 @@
-package dev.nullmod.mixin;
+package nullmod.mixin;
 
-import dev.nullmod.client.TextGarbler;
+import nullmod.client.TextGarbler;
 import net.minecraft.client.gui.Font;
 import net.minecraft.util.FormattedCharSequence;
 import org.spongepowered.asm.mixin.Mixin;

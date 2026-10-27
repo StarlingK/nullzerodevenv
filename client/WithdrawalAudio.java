@@ -1,6 +1,6 @@
-package dev.nullmod.client;
+package nullmod.client;
 
-import dev.nullmod.registry.ModSounds;
+import nullmod.registry.ModSounds;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;

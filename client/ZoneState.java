@@ -1,11 +1,11 @@
-package dev.nullmod.client;
+package nullmod.client;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import dev.nullmod.core.AbilityManager;
-import dev.nullmod.entity.ChronosEchoEntity;
-import dev.nullmod.net.ZonesPayload;
+import nullmod.core.AbilityManager;
+import nullmod.entity.ChronosEchoEntity;
+import nullmod.net.ZonesPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -51,6 +51,19 @@ public final class ZoneState {
     public static boolean shouldSkip(Entity entity) {
         if (zones.isEmpty() || entity instanceof Player || entity instanceof ChronosEchoEntity) {
             return false;
+        }
+        for (Zone z : zones) {
+            if (z.owner() == entity.getId()) return false;
+        }
+        if (entity instanceof net.minecraft.world.entity.monster.Pillager) {
+            double reach = (double) range * range;
+            for (Zone z : zones) {
+                if (z.kind() == AbilityManager.K_BASE
+                        && entity.level().getEntity(z.owner()) instanceof net.minecraft.world.entity.monster.Pillager
+                        && entity.distanceToSqr(z.x(), z.y(), z.z()) <= reach) {
+                    return false;
+                }
+            }
         }
         long gameTime = entity.level().getGameTime();
         double r2 = (double) range * range;

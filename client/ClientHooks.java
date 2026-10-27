@@ -1,8 +1,8 @@
-package dev.nullmod.client;
+package nullmod.client;
 
-import dev.nullmod.net.SpeechPayload;
-import dev.nullmod.net.SyncPayload;
-import dev.nullmod.net.ZonesPayload;
+import nullmod.net.SpeechPayload;
+import nullmod.net.SyncPayload;
+import nullmod.net.ZonesPayload;
 import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
@@ -22,6 +22,10 @@ public final class ClientHooks {
     }
 
     public static void onSpeech(SpeechPayload payload, IPayloadContext context) {
+        if (payload.kind() == SpeechPayload.CAPTAIN) {
+            ClashRift.say(payload.arg());
+            return;
+        }
         ClientState.say(payload.kind(), payload.arg());
     }
 }

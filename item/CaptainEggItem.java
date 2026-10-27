@@ -1,6 +1,6 @@
-package dev.nullmod.item;
+package nullmod.item;
 
-import dev.nullmod.CaptainEvents;
+import nullmod.CaptainEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;

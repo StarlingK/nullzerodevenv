@@ -1,4 +1,4 @@
-package dev.nullmod.client;
+package nullmod.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -15,7 +15,7 @@ import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.util.FastColor;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
-// figure out a better way to do this, self reminder
+
 public final class DestinationGhost {
     private static PlayerModel<AbstractClientPlayer> wide;
     private static PlayerModel<AbstractClientPlayer> slim;

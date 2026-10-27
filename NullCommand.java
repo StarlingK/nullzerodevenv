@@ -1,4 +1,4 @@
-package dev.nullmod;
+package nullmod;
 
 import java.util.List;
 
@@ -8,10 +8,10 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 
-import dev.nullmod.core.AbilityManager;
-import dev.nullmod.core.ChronosData;
-import dev.nullmod.core.ChronosLogic;
-import dev.nullmod.core.ChronosTier;
+import nullmod.core.AbilityManager;
+import nullmod.core.ChronosData;
+import nullmod.core.ChronosLogic;
+import nullmod.core.ChronosTier;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;

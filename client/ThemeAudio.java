@@ -1,7 +1,7 @@
-package dev.nullmod.client;
+package nullmod.client;
 
-import dev.nullmod.NullMod;
-import dev.nullmod.core.AbilityManager;
+import nullmod.NullMod;
+import nullmod.core.AbilityManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
@@ -71,6 +71,7 @@ public final class ThemeAudio {
 
     private static final class ThemeSound extends AbstractTickableSoundInstance {
         float target;
+        int age;
 
         ThemeSound(SoundEvent event) {
             super(event, SoundSource.PLAYERS, RandomSource.create());
@@ -88,6 +89,7 @@ public final class ThemeAudio {
 
         @Override
         public void tick() {
+            age++;
             this.volume = Mth.approach(this.volume, target, FADE_PER_TICK);
         }
 
@@ -139,6 +141,12 @@ public final class ThemeAudio {
         ZERO.update(mc, zero);
         DRAGON.update(mc, dragon);
         CONFESS.update(mc, confess);
+    }
+
+    public static float confessSeconds(float partial) {
+        ThemeSound s = CONFESS.sound;
+        if (s == null || s.getVolume() <= 0.01f) return -1f;
+        return (s.age + partial) / 20.0f;
     }
 
     public static void stopAll() {

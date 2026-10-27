@@ -1,12 +1,12 @@
-package dev.nullmod.entity;
+package nullmod.entity;
 
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.nullmod.core.AbilityManager;
-import dev.nullmod.core.ChronosData;
-import dev.nullmod.core.ChronosLogic;
-import dev.nullmod.registry.ModEntities;
+import nullmod.core.AbilityManager;
+import nullmod.core.ChronosData;
+import nullmod.core.ChronosLogic;
+import nullmod.registry.ModEntities;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;

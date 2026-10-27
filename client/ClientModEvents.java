@@ -1,8 +1,8 @@
-package dev.nullmod.client;
+package nullmod.client;
 
-import dev.nullmod.NullMod;
-import dev.nullmod.registry.ModEntities;
-import dev.nullmod.registry.ModPotions;
+import nullmod.NullMod;
+import nullmod.registry.ModEntities;
+import nullmod.registry.ModPotions;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Items;
@@ -45,7 +45,7 @@ public final class ClientModEvents {
     @SubscribeEvent
     public static void onItemColors(RegisterColorHandlersEvent.Item event) {
         event.register((stack, tint) -> 0xFF000000 | (tint == 0 ? 0x4A5459 : 0x00E5FF),
-                dev.nullmod.registry.ModItems.CAPTAIN_EGG.get());
+                nullmod.registry.ModItems.CAPTAIN_EGG.get());
         event.register((stack, tint) -> {
             if (tint > 0) return -1;
             String path = ModPotions.ourPotionPath(stack);

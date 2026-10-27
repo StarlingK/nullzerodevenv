@@ -1,13 +1,13 @@
-package dev.nullmod.client;
+package nullmod.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import dev.nullmod.NullMod;
-import dev.nullmod.core.AimMath;
-import dev.nullmod.net.AbilityPayload;
-import dev.nullmod.net.SyncPayload;
-import dev.nullmod.registry.ModPotions;
+import nullmod.NullMod;
+import nullmod.core.AimMath;
+import nullmod.net.AbilityPayload;
+import nullmod.net.SyncPayload;
+import nullmod.registry.ModPotions;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -55,6 +55,8 @@ public final class ClientEvents {
             WithdrawalAudio.stop();
             ThemeAudio.stopAll();
             ZoneState.clear();
+            WithdrawalHallucination.clear();
+            ClashRift.clear();
             wasDown = false;
             return;
         }
@@ -64,6 +66,8 @@ public final class ClientEvents {
         ThemeAudio.tick();
         ShaderController.tick();
         WithdrawalAudio.tick();
+        WithdrawalHallucination.tick();
+        ClashRift.tick();
         handleKey(mc);
     }
 
@@ -162,6 +166,8 @@ public final class ClientEvents {
         WithdrawalAudio.stop();
         ThemeAudio.stopAll();
         ZoneState.clear();
+        WithdrawalHallucination.clear();
+        ClashRift.clear();
     }
 
     @SubscribeEvent
@@ -198,7 +204,7 @@ public final class ClientEvents {
 
     @SubscribeEvent
     public static void onRenderLevel(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS || !ClientState.aiming) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
             return;
         }
         Minecraft mc = Minecraft.getInstance();
@@ -206,6 +212,11 @@ public final class ClientEvents {
         if (player == null) return;
 
         float pt = event.getPartialTick().getGameTimeDeltaPartialTick(true);
+        PoseStack ps = event.getPoseStack();
+        Vec3 cam = event.getCamera().getPosition();
+        ClashRift.render(mc, ps, cam, pt);
+        if (!ClientState.aiming) return;
+
         Vec3 look = player.getLookAngle();
         Vec3 start = player.getEyePosition(pt).add(0, -0.25, 0).add(look.scale(0.3));
         Vec3 travelled = AimMath.travel(player, ClientState.aimRange);
@@ -213,51 +224,45 @@ public final class ClientEvents {
                 Mth.lerp(pt, player.zo, player.getZ()));
         Vec3 destination = feetNow.add(travelled);
         Vec3 end = destination.add(0, player.getBbHeight() * 0.5, 0);
+        float time = (mc.level.getGameTime() + pt) / 20f;
 
-        PoseStack ps = event.getPoseStack();
-        Vec3 cam = event.getCamera().getPosition();
         ps.pushPose();
         ps.translate(-cam.x, -cam.y, -cam.z);
-
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
-        Vec3 dir = end.subtract(start);
-        double length = dir.length();
-        if (length > 0.01) {
-            Vec3 n = dir.scale(1.0 / length);
-            Vec3 side = n.cross(new Vec3(0, 1, 0));
-            side = side.lengthSqr() < 1.0e-4 ? new Vec3(1, 0, 0) : side.normalize();
-            Vec3 up = n.cross(side).normalize();
-            side = side.scale(0.12);
-            up = up.scale(0.12);
-            VertexConsumer ribbon = buffers.getBuffer(GhostTypes.BEAM);
-            Matrix4f m = ps.last().pose();
-            int i = 0;
-            for (double t = 0; t < length; t += 0.75, i++) {
-                Vec3 a = start.add(n.scale(t));
-                Vec3 b = start.add(n.scale(Math.min(length, t + 0.75)));
-                float r = (i & 1) == 0 ? 0f : 1f, g = (i & 1) == 0 ? 0.9f : 0.17f, bl = (i & 1) == 0 ? 1f : 0.84f;
-                ribbonQuad(ribbon, m, a, b, side, r, g, bl);
-                ribbonQuad(ribbon, m, a, b, up, r, g, bl);
-            }
-            buffers.endBatch(GhostTypes.BEAM);
-        }
+        AimLine.render(mc, ps, cam, start, end, destination, time);
         if (travelled.lengthSqr() > 0.04) {
             DestinationGhost.render(mc, player, destination, ps, buffers, pt);
         }
         ps.popPose();
     }
 
-    private static void ribbonQuad(VertexConsumer vc, Matrix4f m, Vec3 a, Vec3 b, Vec3 off,
-                                   float r, float g, float bl) {
-        float alpha = 0.55f;
-        vc.addVertex(m, (float) (a.x - off.x), (float) (a.y - off.y), (float) (a.z - off.z)).setColor(r, g, bl, alpha);
-        vc.addVertex(m, (float) (a.x + off.x), (float) (a.y + off.y), (float) (a.z + off.z)).setColor(r, g, bl, alpha);
-        vc.addVertex(m, (float) (b.x + off.x), (float) (b.y + off.y), (float) (b.z + off.z)).setColor(r, g, bl, alpha);
-        vc.addVertex(m, (float) (b.x - off.x), (float) (b.y - off.y), (float) (b.z - off.z)).setColor(r, g, bl, alpha);
+    @SubscribeEvent
+    @SuppressWarnings("unchecked")
+    public static void onRenderLivingPre(RenderLivingEvent.Pre<?, ?> event) {
+        LivingEntity proxy = WithdrawalHallucination.proxyFor(event.getEntity());
+        if (proxy == null) return;
+        net.minecraft.client.renderer.entity.EntityRenderer<LivingEntity> renderer =
+                (net.minecraft.client.renderer.entity.EntityRenderer<LivingEntity>)
+                        (net.minecraft.client.renderer.entity.EntityRenderer<?>)
+                        Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(proxy);
+        float pt = event.getPartialTick();
+        LivingEntity real = event.getEntity();
+        renderer.render(proxy, Mth.rotLerp(pt, real.yRotO, real.getYRot()), pt,
+                event.getPoseStack(), event.getMultiBufferSource(), event.getPackedLight());
+        event.setCanceled(true);
+    }
+
+    @SubscribeEvent
+    public static void onAttack(net.neoforged.neoforge.event.entity.player.AttackEntityEvent event) {
+        if (event.getEntity().level().isClientSide && event.getEntity() == Minecraft.getInstance().player) {
+            WithdrawalHallucination.shatter(event.getTarget());
+        }
     }
 
     @SubscribeEvent
     public static void onRenderLiving(RenderLivingEvent.Post<?, ?> event) {
+        ClashRift.captainText(event.getEntity(), event.getPoseStack(), event.getMultiBufferSource(),
+                event.getPartialTick(), event.getPackedLight());
         if (ClientState.stage < 3 || !ClientState.glitching()) return;
         LivingEntity entity = event.getEntity();
         if (entity == Minecraft.getInstance().player || entity.isInvisible()) return;

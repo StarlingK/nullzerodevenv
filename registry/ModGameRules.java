@@ -1,4 +1,4 @@
-package dev.nullmod.registry;
+package nullmod.registry;
 
 import net.minecraft.world.level.GameRules;
 

@@ -1,8 +1,8 @@
-package dev.nullmod.client;
+package nullmod.client;
 
 import java.util.List;
 
-import dev.nullmod.registry.ModPotions;
+import nullmod.registry.ModPotions;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.PageButton;
